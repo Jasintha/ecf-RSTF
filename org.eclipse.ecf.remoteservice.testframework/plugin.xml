@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+ <extension point="org.eclipse.ui.popupMenus">
+                <objectContribution
+              objectClass="org.eclipse.core.resources.IResource"
+                    id="org.eclipse.ecf.remoteservice.testframework">
+               <action
+                        label="Test ECF R-OSGI Services"
+                        icon="icons/test.gif"
+                   class="org.eclipse.ecf.remoteservice.testframework.handler.ServiceRegisterHandler"
+                        id="org.eclipse.ecf.remoteservice.testframework">
+               </action>
+               </objectContribution>
+        </extension>
+</plugin>
