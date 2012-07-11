@@ -34,13 +34,14 @@ public class AnnotatedTestClass {
 	 */
 	public void test(Object proxy, MessageConsoleStream userConsole) {
 
-		userConsole.getConsole().clearConsole();
 		userConsole.println(Message.TEST_BEGIN + testClass.getSimpleName());
+		System.out.println(Message.TEST_BEGIN);
 		Method[] methods = testClass.getMethods();
-		for (Method method : methods) {
+		for (Method method : methods) {	 
 			String methodname = AnnotationProcesser.isTestMethod(method);
 			if (methodname != null) {
 				userConsole.println(Message.TEST_SEPERATOR);
+				System.out.println(Message.TEST_SEPERATOR);
 				Object[] params = AnnotationProcesser.getParams(method);
 				Map<String, Class<?>> returnvalue = AnnotationProcesser
 						.getReturnvalue(method);
@@ -60,12 +61,16 @@ public class AnnotatedTestClass {
 								if (checktype(invoke, returnType)) {
 									userConsole.println(Message.TEST_PASS
 											+ methodname);
+									System.out.println(Message.TEST_PASS
+											+ methodname);
 								}
 
 							} else {
 								if (returnType.isAssignableFrom(invoke
 										.getClass())) {
 									userConsole.println(Message.TEST_PASS
+											+ methodname);
+									System.out.println(Message.TEST_PASS
 											+ methodname);
 								}
 							}
@@ -174,7 +179,6 @@ public class AnnotatedTestClass {
 
 		} else if (boxed.equals(short.class)) {
 			return invoke instanceof Short;
-
 		}
 
 		return false;
