@@ -10,7 +10,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)		
 
 public @interface ServiceTest {
-	public String IService();//service Interface Name, or path
+	/*public String IService();//service Interface Name, or path
 	public String ImplService();//Service Imple name or classs 
-	public String libraries();
+	public String libraries();*/
+	
+	public Class<?> Imple();
 }

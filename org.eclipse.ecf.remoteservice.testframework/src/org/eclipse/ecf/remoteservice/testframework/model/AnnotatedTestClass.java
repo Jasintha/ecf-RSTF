@@ -20,19 +20,85 @@ public class AnnotatedTestClass {
 	private String implService;
 	private Class<?> testClass;
 	private String[] libraries;
+	private MessageConsoleStream userConsole;
 	
-	public AnnotatedTestClass(Class<?> type,String iService,String implService,String[] libraries) {
-		 this.iService = iService;
-		 this.implService = implService;
+	public AnnotatedTestClass(Class<?> type,String impleClazz) {
+  
+		 this.implService = impleClazz;
 		 this.testClass = type;
-		 this.setLibraries(libraries);
 	}
  
+	public void Start() throws Exception{
+		userConsole.println(Message.TEST_BEGIN + testClass.getSimpleName());
+		System.out.println(Message.TEST_BEGIN);
+		Method[] methods = testClass.getMethods();
+		Object testClazzInstance=null;
+	    if(methods!=null){
+	    	boolean isInit = false;
+	    	for (Method method : methods) {
+				if(AnnotationProcesser.isTestInitMethod(method)){
+					testClazzInstance=testClass.newInstance();
+					method.invoke(testClazzInstance,null);
+					isInit = true;
+					break;
+				}
+			}
+	    	if(isInit){
+	    		this.test(methods,testClazzInstance);
+	    	}
+	    	
+	    }else{
+	    	userConsole.println("Coudn't find any methods in the "+testClass.getSimpleName());
+	    }
+		
+	}
 	/**
 	 * Start the testing
 	 * @param proxy - this the remote service object
+	 * @throws InstantiationException 
+	 * @throws InvocationTargetException 
+	 * @throws IllegalAccessException 
+	 * @throws IllegalArgumentException 
 	 */
-	public void test(Object proxy, MessageConsoleStream userConsole) {
+	public void test(Method[] methods,Object clazzInstance) throws Exception {
+		
+		for (Method method : methods) {	 
+			String methodname = AnnotationProcesser.isTestMethod(method);
+			if (methodname != null) {
+				try{
+				userConsole.println(Message.TEST_SEPERATOR);
+				userConsole.println("Testing Method : "+methodname);
+				method.invoke(clazzInstance,null);//Test Methods do not take any params 
+				userConsole.println(Message.TEST_SEPERATOR);
+				}catch (SecurityException e) {
+					userConsole.println(Message.TEST_FAIL + methodname
+							+ " : duto " + e.getMessage());
+					e.printStackTrace();
+					e.printStackTrace();
+				} catch (IllegalArgumentException e) {
+					userConsole.println(Message.TEST_FAIL + methodname
+							+ " : duto " + e.getMessage());
+					e.printStackTrace();
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					userConsole.println(Message.TEST_FAIL + methodname
+							+ " : duto " + e.getMessage());
+					e.printStackTrace();
+					e.printStackTrace();
+				} catch (InvocationTargetException e) {
+		 
+						userConsole.println(Message.TEST_FAIL + methodname
+								+ " : duto " + e.getMessage() + " : "
+								+ ExceptionUtils.getRootCause(e).getMessage());
+						e.printStackTrace();
+				 
+				}
+			}
+		}
+	}
+
+	
+/*	public void test(Object proxy, MessageConsoleStream userConsole) {
 
 		userConsole.println(Message.TEST_BEGIN + testClass.getSimpleName());
 		System.out.println(Message.TEST_BEGIN);
@@ -80,7 +146,7 @@ public class AnnotatedTestClass {
 									+ " : duto " + "Return value miss match");
 						}
 					} else {
-						/* method not expecting any return value or exception */
+						 method not expecting any return value or exception 
 						userConsole.println(Message.TEST_PASS + methodname);
 					}
 
@@ -121,6 +187,7 @@ public class AnnotatedTestClass {
 			}
 		}
 	}
+*/
 
 	public void setiService(String iService) {
 		this.iService = iService;
@@ -132,6 +199,14 @@ public class AnnotatedTestClass {
 
 	public void setImplService(String implService) {
 		this.implService = implService;
+	}
+
+	public void setUserConsole(MessageConsoleStream userConsole) {
+		this.userConsole = userConsole;
+	}
+
+	public MessageConsoleStream getUserConsole() {
+		return userConsole;
 	}
 
 	public String getImplService() {

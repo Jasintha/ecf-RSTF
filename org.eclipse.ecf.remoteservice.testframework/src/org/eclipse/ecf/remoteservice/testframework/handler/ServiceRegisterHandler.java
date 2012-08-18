@@ -12,9 +12,10 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.ecf.remoteservice.testframework.actions.ServiceActivator;
 import org.eclipse.ecf.remoteservice.testframework.actions.ServiceClassLoader;
 import org.eclipse.ecf.remoteservice.testframework.actions.ServiceConsumer;
-import org.eclipse.ecf.remoteservice.testframework.actions.TestConsole;
+import org.eclipse.ecf.remoteservice.testframework.actions.TestOutputConsole;
 import org.eclipse.ecf.remoteservice.testframework.annotaion.processer.AnnotationProcesser;
 import org.eclipse.ecf.remoteservice.testframework.model.AnnotatedTestClass;
+import org.eclipse.ecf.remoteservice.testframework.ui.FrameworkEditor;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
@@ -22,10 +23,19 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IActionDelegate;
+import org.eclipse.ui.IEditorDescriptor;
+import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IPersistableElement;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.MessageConsoleStream;
+
  
 
 public class ServiceRegisterHandler implements IActionDelegate {
@@ -34,29 +44,70 @@ public class ServiceRegisterHandler implements IActionDelegate {
 	private String projectClasspath;
 	private MessageConsoleStream userConsole;
 	private IClasspathEntry[] rawClasspath;
-
+    private IProject[] workspIProjects;
+    private String serviceContainer;
+    private String ConsumerContainer;
+    private String hostId;
+    
 	@Override
 	public void run(IAction arg0) {
 		try {
-			final Object lock = new Object();
 			loadTestConsole();
+		    openEditor(); 
+
+		  } catch (Exception e) {
+			userConsole.println(e.getMessage());
+			e.printStackTrace();
+		}
+
+	}
+	
+	public void openEditor() throws PartInitException {
+		IWorkbenchWindow window = PlatformUI.getWorkbench()
+				.getActiveWorkbenchWindow();
+		IWorkbenchPage page = window.getActivePage();
+		IEditorDescriptor findEditor = window
+				.getWorkbench()
+				.getEditorRegistry()
+				.findEditor(
+						"org.eclipse.ecf.remoteservice.testframework.ui.editorID");
+		page.openEditor(new NullEditorInput(),findEditor.getId());
+		FrameworkEditor.setHandler(this);
+	}
+	
+	public void testInit(){
+		try {
+			final Object lock = new Object();
 			AnnotationProcesser processer = new AnnotationProcesser();
+		 
 			ServiceClassLoader classLoader = new ServiceClassLoader(
-					classNameList, projectClasspath, processer,rawClasspath);
+					classNameList, projectClasspath, processer, rawClasspath,workspIProjects);
+			
 			List<AnnotatedTestClass> testClassesList = classLoader
 					.getTestClassesList();
 			if(testClassesList.size()>0){
 			for (AnnotatedTestClass testClass : testClassesList) {
-
+				String serviceURL=null;
+				if("local".equals(this.getHostId())){
 				ServiceActivator service = startService(lock, classLoader,
 						testClass);
+				serviceURL = service.getserviceHost();
+				}else{
+					serviceURL =this.getHostId();
+				}
 
 				ServiceConsumer serviceConsumer = serviceConsumer(lock,
-						classLoader, testClass, service,
+						classLoader, testClass, serviceURL,
 						processer.getDefineHost(testClass.getType()));
 
-				testClass.test(serviceConsumer.getRemoteService().getProxy(),
-						userConsole);
+					RemoteProxyInvocationHandler.setServiceProxy(serviceConsumer.getRemoteService()
+									.getProxy(
+											classLoader.getJdbcJarLoader(),
+											new Class[] { classLoader
+													.getclass(testClass
+															.getiService()) }));
+					testClass.setUserConsole(userConsole);
+					testClass.Start();
 
 			}
 		  	   userConsole.println("\n\n Test completed Successfully !!");
@@ -64,13 +115,14 @@ public class ServiceRegisterHandler implements IActionDelegate {
 				userConsole.println("Test Classes NOT found ! \n\n");
 			}
 		} catch (Exception e) {
+			userConsole.println(e.getMessage());
 			e.printStackTrace();
 		}
 
 	}
 
 	private void loadTestConsole() {
-		TestConsole report = new TestConsole();
+		TestOutputConsole report = new TestOutputConsole();
 	    userConsole = report.getOut();
 	    try{
 	    	 userConsole.print("****************");
@@ -78,6 +130,22 @@ public class ServiceRegisterHandler implements IActionDelegate {
 	    	e.printStackTrace();
 	    }
 	   
+	}
+
+	public void setServiceContainer(String serviceContainer) {
+		this.serviceContainer = serviceContainer;
+	}
+
+	public String getServiceContainer() {
+		return serviceContainer;
+	}
+
+	public void setConsumerContainer(String consumerContainer) {
+		ConsumerContainer = consumerContainer;
+	}
+
+	public String getConsumerContainer() {
+		return ConsumerContainer;
 	}
 
 	/**
@@ -88,17 +156,15 @@ public class ServiceRegisterHandler implements IActionDelegate {
 	 * @throws ClassNotFoundException
 	 * @throws InterruptedException
 	 */
-	private ServiceConsumer serviceConsumer(final Object lock,
+  private ServiceConsumer serviceConsumer(final Object lock,
 			ServiceClassLoader classLoader, AnnotatedTestClass testClass,
-			ServiceActivator service,String hostId) throws ClassNotFoundException,
+			String serviceURL,String hostId) throws  Exception,
 			InterruptedException {
 		 ServiceConsumer consumer = new  ServiceConsumer();
 		 consumer.setInterfaceName(classLoader.getclass(testClass.getiService()).getName());
-		 if(hostId!=null){
-			 consumer.setServiceURL(hostId);
-		 }else{
-			 consumer.setServiceURL(service.getserviceHost());
-		 }
+		 consumer.setServiceURL(serviceURL);
+		 consumer.setContainerDescription(getConsumerContainer());
+		 consumer.setConsole(userConsole);
 		 consumer.setLock(lock);
  		   
  		   Thread sct = new Thread(consumer);
@@ -109,13 +175,15 @@ public class ServiceRegisterHandler implements IActionDelegate {
  	  return consumer;   
 	}
 
-	private ServiceActivator startService(final Object lock,
+  private ServiceActivator startService(final Object lock,
 			ServiceClassLoader classLoader, AnnotatedTestClass testClass)
 			throws InstantiationException, IllegalAccessException,
-			ClassNotFoundException, InterruptedException {
+			ClassNotFoundException, InterruptedException,Exception {
 	     ServiceActivator service = new ServiceActivator();
 		 service.setClassInstance(classLoader.getclass(testClass.getImplService()).newInstance());
 		 service.setInterfaceName(classLoader.getclass(testClass.getiService()).getName());
+		 service.setContainerDescription(getServiceContainer());
+		 service.setConsole(userConsole);
 		 service.setLock(lock);
 		   Thread sct = new Thread(service);
  		   synchronized(lock) {
@@ -126,18 +194,19 @@ public class ServiceRegisterHandler implements IActionDelegate {
 	}
 
 	@Override
-	public void selectionChanged(IAction arg0, ISelection selection) {
+  public void selectionChanged(IAction arg0, ISelection selection) {
  
 		if (selection instanceof IStructuredSelection) {
 			 try { 
 			 IStructuredSelection StructuredSelection = (IStructuredSelection) selection;
 			 IResource resource = (IResource) StructuredSelection.getFirstElement();
+			 workspIProjects = resource.getWorkspace().getRoot().getProjects();
 			 IProject project = resource.getProject();
 			 project.open(new NullProgressMonitor());
 			 project.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
 			 project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
  
-			 classNameList =this.getClasses(project);
+			 classNameList =ServiceClassLoader.getClasses(project,null);
 			 System.out.println(classNameList.size());
 			 IJavaProject jp = JavaCore.create(project);
 			 rawClasspath = jp.getRawClasspath();
@@ -153,10 +222,19 @@ public class ServiceRegisterHandler implements IActionDelegate {
 		}
 		
 	}
+
+	public void setHostId(String hostId) {
+		this.hostId = hostId;
+	}
+
+	public String getHostId() {
+		return hostId;
+	}
 	
-	private List<String> getClasses(IProject project){
+/*	private static List<String> getClasses(IProject project,String classname){
 		IJavaProject jp = JavaCore.create(project);
 		  List<String> classesList = new ArrayList<String>();
+		  boolean isclassavilable=false;
 			try {
 				IPackageFragment[] packageFragments = jp.getPackageFragments();
 				for (IPackageFragment fragment : packageFragments) {
@@ -164,6 +242,11 @@ public class ServiceRegisterHandler implements IActionDelegate {
 							for (ICompilationUnit unit : compilationUnits) {
 								IType[] types = unit.getTypes();
 								for (IType type : types) {
+									if(classname!=null){
+										if(classname.equals(type.getFullyQualifiedName())){
+											isclassavilable =true;
+										}
+									} 
 									classesList.add(type.getFullyQualifiedName());
 								}
 							}
@@ -171,7 +254,39 @@ public class ServiceRegisterHandler implements IActionDelegate {
 			} catch (Exception e) {
 				 e.printStackTrace();
 	    }
+			 if((classname!=null)&&(!isclassavilable)){
+				 classesList=null;
+			 }	
 	return classesList;		
-	}
+	}*/
 	
 }
+
+class NullEditorInput implements IEditorInput {
+
+	public boolean exists() {
+	return true;
+	}
+
+	public ImageDescriptor getImageDescriptor() {
+	return ImageDescriptor.getMissingImageDescriptor();
+	}
+
+	public String getName() {
+	return "Dashboard";
+	}
+
+	public IPersistableElement getPersistable() {
+	return null;
+	}
+
+	public String getToolTipText() {
+	return  "rosgi";
+	}
+
+	public Object getAdapter(Class adapter) {
+	return null;
+	}
+
+}
+

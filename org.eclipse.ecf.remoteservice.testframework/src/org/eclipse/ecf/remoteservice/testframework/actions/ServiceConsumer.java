@@ -8,6 +8,7 @@ import org.eclipse.ecf.remoteservice.IRemoteService;
 import org.eclipse.ecf.remoteservice.IRemoteServiceContainerAdapter;
 import org.eclipse.ecf.remoteservice.IRemoteServiceReference;
 import org.eclipse.ecf.remoteservice.testframework.Activator;
+import org.eclipse.ui.console.MessageConsoleStream;
 //import org.jasintha.ecf.service.cal.ICal;
 import org.osgi.framework.BundleContext;
 import org.osgi.util.tracker.ServiceTracker;
@@ -21,6 +22,8 @@ public class ServiceConsumer implements Runnable {
 	private String  interfaceName; //ICal.class.getName()
 	private IRemoteService remoteService;
 	private Object lock;
+	private String containerDescription; //ecf.r_osgi.peer
+	private MessageConsoleStream console;
 	
  
 	
@@ -37,38 +40,25 @@ public class ServiceConsumer implements Runnable {
 	@Override
 	public void run() {
 		try{
-			
 		synchronized (lock) {
-			
 			context = Platform.getBundle(Activator.PLUGIN_ID).getBundleContext(); 
 			IContainerManager containerManager = getContainerManagerService();
-			container = containerManager.getContainerFactory().createContainer("ecf.r_osgi.peer");
-
+			container = containerManager.getContainerFactory().createContainer(containerDescription);
 			IRemoteServiceContainerAdapter containerAdapter = (IRemoteServiceContainerAdapter) container
 					.getAdapter(IRemoteServiceContainerAdapter.class);
-
 			IRemoteServiceReference[] helloReferences = containerAdapter
 					.getRemoteServiceReferences(IDFactory.getDefault().createID(container.getConnectNamespace(),
 							serviceURL), interfaceName, null);
-			// Assert.isNotNull(helloReferences);
-			// Assert.isTrue(helloReferences.length > 0);
-			// 4. Get remote service for reference
 			remoteService = containerAdapter.getRemoteService(helloReferences[0]);
-			// 5. Get the proxy
-			//ICal proxy = (ICal) remoteService.getProxy();
-			// 6. Finally...call the proxy
-			//	int response = proxy.add(12, 12);
-
 			System.out.println("Service Consumer installed");
+			console.println("Service Consumer installed");
 			lock.notify();
-			
 		}	
-		
 		}catch(Exception e){
-			e.printStackTrace();
+		  	e.printStackTrace();
+		  	console.println(e.getMessage());
 			lock.notify();
 		}
- 
 	}
 	
 	
@@ -104,6 +94,26 @@ public class ServiceConsumer implements Runnable {
 
 	public void setServiceURL(String serviceURL) {
 		this.serviceURL = serviceURL;
+	}
+
+
+	public void setContainerDescription(String containerDescription) {
+		this.containerDescription = containerDescription;
+	}
+
+
+	public String getContainerDescription() {
+		return containerDescription;
+	}
+
+
+	public void setConsole(MessageConsoleStream console) {
+		this.console = console;
+	}
+
+
+	public MessageConsoleStream getConsole() {
+		return console;
 	}
 
 }

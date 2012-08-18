@@ -14,12 +14,13 @@ import org.eclipse.ui.console.IConsoleView;
 import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.console.MessageConsoleStream;
 
-public class TestConsole {
+public class TestOutputConsole {
  
    private MessageConsoleStream out;
 	
-	public TestConsole() {
+	public TestOutputConsole() {
 		 MessageConsole myConsole = findConsole(Message.TEST_CONSOLE_NAME);
+		 //myConsole.
 		 MessageConsoleStream out = myConsole.newMessageStream();
 		 setOut(out);
 	}

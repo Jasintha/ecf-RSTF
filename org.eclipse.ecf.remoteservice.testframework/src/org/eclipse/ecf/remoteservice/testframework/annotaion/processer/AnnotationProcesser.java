@@ -11,12 +11,13 @@ import org.eclipse.ecf.remoteservice.testframework.annotaions.ResultException;
 import org.eclipse.ecf.remoteservice.testframework.annotaions.ServiceHost;
 import org.eclipse.ecf.remoteservice.testframework.annotaions.ServiceTest;
 import org.eclipse.ecf.remoteservice.testframework.annotaions.Test;
+import org.eclipse.ecf.remoteservice.testframework.annotaions.TestInit;
 
 public class AnnotationProcesser {
 	
-	private String iService;
-	private String implService;
-	private String[] libraries;
+//	private String iService;
+//	private String implService;
+	//private String[] libraries;
 	
 	/**
 	 * This method use to find-out the test  classes of the project also once test class is found 
@@ -25,16 +26,19 @@ public class AnnotationProcesser {
 	 * @return - if given class has annotation "ServiceTest" return true else return false
 	 * 
 	 */
-public boolean isTestClasses(Class<?> aClass){
+public String getTestClazzImple(Class<?> aClass){
 		Annotation annotation = aClass.getAnnotation(ServiceTest.class);
         if(annotation instanceof ServiceTest){
         	ServiceTest  serviceTest = (ServiceTest) annotation;
-        	this.setiService(serviceTest.IService());
+        	/*this.setiService(serviceTest.IService());
         	this.setImplService(serviceTest.ImplService());
-        	this.setLibraries(serviceTest.libraries().split(","));
-        	return true;
+        	this.setLibraries(serviceTest.libraries().split(","));*/
+        	Class<?> imple = serviceTest.Imple();
+        	if(imple!=null){
+        	return imple.getName();
+        	}
         }		
-		return  false;
+		return  null;
 	}
   
 public String getDefineHost(Class<?> aClass){
@@ -46,7 +50,6 @@ public String getDefineHost(Class<?> aClass){
 	return  null;
 }
 
-
 public static String isTestMethod(Method method){
 	    Annotation annotation = method.getAnnotation(Test.class);
 	    if(annotation instanceof Test){
@@ -54,6 +57,14 @@ public static String isTestMethod(Method method){
        }		
 		 return  null;
   }
+
+public static boolean isTestInitMethod(Method method){
+    Annotation annotation = method.getAnnotation(TestInit.class);
+    if(annotation instanceof TestInit){
+   	  return true;
+   }		
+	 return  false;
+}
   
 public static Object[] getParams(Method method){
 	  Annotation[][] parameterAnnotations = method.getParameterAnnotations();
@@ -124,29 +135,4 @@ private static void addParam(Object[] paramlist,int index, Param param, Class<?>
 			paramlist[index] = new String(param.value());
 		}
 	}
-
-public void setiService(String iService) {
-	this.iService = iService;
-}
-
-public String getiService() {
-	return iService;
-}
-
-public void setImplService(String implService) {
-	this.implService = implService;
-}
-
-public String getImplService() {
-	return implService;
-}
-
-public void setLibraries(String[] libraries) {
-	this.libraries = libraries;
-}
-
-public String[] getLibraries() {
-	return libraries;
-}
-
 }

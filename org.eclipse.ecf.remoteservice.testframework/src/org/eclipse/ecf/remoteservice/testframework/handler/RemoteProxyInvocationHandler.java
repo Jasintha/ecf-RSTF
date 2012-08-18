@@ -1,15 +1,14 @@
 package org.eclipse.ecf.remoteservice.testframework.handler;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
+public class RemoteProxyInvocationHandler {
 
-public class RemoteProxyInvocationHandler implements InvocationHandler{
+	 private static Object proxy;
 
- 
-	@Override
-	public Object invoke(Object proxy, Method method, Object[] args)
-			throws Throwable {
-		 
-		return null;
-	}
+	 public static void setServiceProxy(Object proxy) {
+		 RemoteProxyInvocationHandler.proxy = proxy;
+	 }
+
+	 public static<T> T getServiceProxy(Class<T> type) {
+	 	return type.cast(proxy);
+	 } 
 }

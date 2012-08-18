@@ -14,9 +14,7 @@ public class Logger extends ServiceTracker implements LogService{
 
 	/** PrintStream to use if LogService is unavailable */
 	private final PrintStream out;
-	
-	
-	
+ 
 	public Logger(BundleContext context, PrintStream out) {
 		super(context, clazz, null);
 		this.out = out;

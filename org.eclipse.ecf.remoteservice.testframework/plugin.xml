@@ -12,6 +12,13 @@
                    class="org.eclipse.ecf.remoteservice.testframework.handler.ServiceRegisterHandler"
                         id="org.eclipse.ecf.remoteservice.testframework">
                </action>
-               </objectContribution>
+             </objectContribution>
         </extension>
+ <extension point="org.eclipse.ui.editors">
+      <editor
+            class="org.eclipse.ecf.remoteservice.testframework.ui.FrameworkEditor"
+            id="org.eclipse.ecf.remoteservice.testframework.ui.editorID"
+            name="ECF Remote Service Test Framework">
+      </editor>
+   </extension>
 </plugin>
