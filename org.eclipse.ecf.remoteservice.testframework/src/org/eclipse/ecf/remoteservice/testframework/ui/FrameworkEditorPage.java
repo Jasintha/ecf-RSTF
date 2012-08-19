@@ -44,12 +44,12 @@ public class FrameworkEditorPage extends FormPage {
 	private Text text;
 	private Text text_1;
 	private Text text_2;
-	private Text txtNewText;
 	private Table table;
 	private Combo combo;
 	private Button btnLocalhost;
 	private ServiceRegisterHandler handler;
 	String[] itmes;
+	private Text txtContainerProviderShould;
 	/**
 	 * Create the form page.
 	 * @param id
@@ -90,12 +90,11 @@ public class FrameworkEditorPage extends FormPage {
 		
 		Section sctnNewSection = managedForm.getToolkit().createSection(managedForm.getForm().getBody(), Section.EXPANDED | Section.TWISTIE | Section.TITLE_BAR);
 		GridData gd_sctnNewSection = new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1);
-		gd_sctnNewSection.heightHint = 188;
-		gd_sctnNewSection.widthHint = 600;
+		gd_sctnNewSection.heightHint = 270;
+		gd_sctnNewSection.widthHint = 669;
 		sctnNewSection.setLayoutData(gd_sctnNewSection);
 		managedForm.getToolkit().paintBordersFor(sctnNewSection);
 		sctnNewSection.setText("Service Containers ");
-		sctnNewSection.setExpanded(false);
 		
 		Composite composite = new Composite(sctnNewSection, SWT.NONE);
 		managedForm.getToolkit().adapt(composite);
@@ -113,19 +112,13 @@ public class FrameworkEditorPage extends FormPage {
 		combo.setLayoutData(gd_combo);
 		managedForm.getToolkit().adapt(combo);
 		managedForm.getToolkit().paintBordersFor(combo);
-
-		txtNewText = managedForm.getToolkit().createText(composite, "New Text", SWT.READ_ONLY | SWT.MULTI);
-		txtNewText.setEditable(false);
-		txtNewText.setText("");
-		GridData gd_txtNewText = new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1);
-		gd_txtNewText.heightHint = 104;
-		txtNewText.setLayoutData(gd_txtNewText);
+		new Label(composite, SWT.NONE);
 		
 		Group grpDefineNewService = new Group(composite, SWT.NONE);
 		grpDefineNewService.setText("Define new Service Containers");
 		grpDefineNewService.setLayout(new GridLayout(2, false));
 		GridData gd_grpDefineNewService = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
-		gd_grpDefineNewService.heightHint = 94;
+		gd_grpDefineNewService.heightHint = 101;
 		gd_grpDefineNewService.widthHint = 423;
 		grpDefineNewService.setLayoutData(gd_grpDefineNewService);
 		managedForm.getToolkit().adapt(grpDefineNewService);
@@ -133,7 +126,7 @@ public class FrameworkEditorPage extends FormPage {
 		
 		Label lblServiceContinerDiscriptionname = new Label(grpDefineNewService, SWT.NONE);
 		managedForm.getToolkit().adapt(lblServiceContinerDiscriptionname, true, true);
-		lblServiceContinerDiscriptionname.setText("service Continer DiscriptionName");
+		lblServiceContinerDiscriptionname.setText("service container description");
 		
 		text_1 = new Text(grpDefineNewService, SWT.BORDER);
 		GridData gd_text_1 = new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1);
@@ -144,7 +137,7 @@ public class FrameworkEditorPage extends FormPage {
 		Label lblConsumerContainerDiscription = new Label(grpDefineNewService, SWT.NONE);
 		lblConsumerContainerDiscription.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
 		managedForm.getToolkit().adapt(lblConsumerContainerDiscription, true, true);
-		lblConsumerContainerDiscription.setText("Consumer Container Discription Name");
+		lblConsumerContainerDiscription.setText("Consumer container description");
 		
 		text_2 = new Text(grpDefineNewService, SWT.BORDER);
 		GridData gd_text_2 = new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1);
@@ -153,11 +146,53 @@ public class FrameworkEditorPage extends FormPage {
 		managedForm.getToolkit().adapt(text_2, true, true);
 		
 		Button btnNewButton_2 = new Button(grpDefineNewService, SWT.NONE);
+		GridData gd_btnNewButton_2 = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
+		gd_btnNewButton_2.widthHint = 91;
+		btnNewButton_2.setLayoutData(gd_btnNewButton_2);
 		managedForm.getToolkit().adapt(btnNewButton_2, true, true);
-		btnNewButton_2.setText("Add to Container List");
+		btnNewButton_2.setText("Add  ");
 		new Label(grpDefineNewService, SWT.NONE);
 		new Label(managedForm.getForm().getBody(), SWT.NONE);
-		new Label(managedForm.getForm().getBody(), SWT.NONE);
+		
+		Section sctnServiceHostsLoactions = managedForm.getToolkit().createSection(managedForm.getForm().getBody(), Section.EXPANDED | Section.TWISTIE | Section.TITLE_BAR);
+		GridData gd_sctnServiceHostsLoactions = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 2);
+		gd_sctnServiceHostsLoactions.heightHint = 131;
+		gd_sctnServiceHostsLoactions.widthHint = 666;
+		sctnServiceHostsLoactions.setLayoutData(gd_sctnServiceHostsLoactions);
+		managedForm.getToolkit().paintBordersFor(sctnServiceHostsLoactions);
+		sctnServiceHostsLoactions.setText("Service Hosts Loactions");
+		sctnServiceHostsLoactions.setExpanded(true);
+		
+		Composite composite_1 = new Composite(sctnServiceHostsLoactions, SWT.NONE);
+		managedForm.getToolkit().adapt(composite_1);
+		managedForm.getToolkit().paintBordersFor(composite_1);
+		sctnServiceHostsLoactions.setClient(composite_1);
+		composite_1.setLayout(new GridLayout(1, false));
+		
+		btnLocalhost = new Button(composite_1, SWT.CHECK);
+		btnLocalhost.setSelection(true);
+		managedForm.getToolkit().adapt(btnLocalhost, true, true);
+		btnLocalhost.setText("localhost");
+		
+		Group grpDefineARemote = new Group(composite_1, SWT.NONE);
+		grpDefineARemote.setText("Define a Remote Service");
+		grpDefineARemote.setLayout(new GridLayout(2, false));
+		GridData gd_grpDefineARemote = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
+		gd_grpDefineARemote.heightHint = 52;
+		gd_grpDefineARemote.widthHint = 513;
+		grpDefineARemote.setLayoutData(gd_grpDefineARemote);
+		managedForm.getToolkit().adapt(grpDefineARemote);
+		managedForm.getToolkit().paintBordersFor(grpDefineARemote);
+		
+		Label lblServiceIp = new Label(grpDefineARemote, SWT.NONE);
+		managedForm.getToolkit().adapt(lblServiceIp, true, true);
+		lblServiceIp.setText("Service URL");
+		
+		text = new Text(grpDefineARemote, SWT.BORDER);
+		GridData gd_text = new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1);
+		gd_text.widthHint = 173;
+		text.setLayoutData(gd_text);
+		managedForm.getToolkit().adapt(text, true, true);
 		btnNewButton_2.addListener(SWT.MouseDown, new Listener() {
 			
 			@Override
@@ -176,68 +211,18 @@ public class FrameworkEditorPage extends FormPage {
 						text_1.setText("");
 						text_2.setText("");
 					 }catch(Exception e){
-					 txtNewText.setText(e.getMessage());
+						 txtContainerProviderShould.setText(e.getMessage());
 					}
 				}
 			}
 		});
- 
-		Section sctnServiceHostsLoactions = managedForm.getToolkit().createSection(managedForm.getForm().getBody(), Section.TWISTIE | Section.TITLE_BAR);
-		GridData gd_sctnServiceHostsLoactions = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
-		gd_sctnServiceHostsLoactions.heightHint = 151;
-		gd_sctnServiceHostsLoactions.widthHint = 598;
-		sctnServiceHostsLoactions.setLayoutData(gd_sctnServiceHostsLoactions);
-		managedForm.getToolkit().paintBordersFor(sctnServiceHostsLoactions);
-		sctnServiceHostsLoactions.setText("Service Hosts Loactions");
-		
-		Composite composite_1 = new Composite(sctnServiceHostsLoactions, SWT.NONE);
-		managedForm.getToolkit().adapt(composite_1);
-		managedForm.getToolkit().paintBordersFor(composite_1);
-		sctnServiceHostsLoactions.setClient(composite_1);
-		composite_1.setLayout(new GridLayout(1, false));
-		
-		btnLocalhost = new Button(composite_1, SWT.CHECK);
-		managedForm.getToolkit().adapt(btnLocalhost, true, true);
-		btnLocalhost.setText("localhost");
-		
-		Group grpDefineARemote = new Group(composite_1, SWT.NONE);
-		grpDefineARemote.setText("Define a Remote Service");
-		grpDefineARemote.setLayout(new GridLayout(2, false));
-		GridData gd_grpDefineARemote = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
-		gd_grpDefineARemote.heightHint = 67;
-		gd_grpDefineARemote.widthHint = 513;
-		grpDefineARemote.setLayoutData(gd_grpDefineARemote);
-		managedForm.getToolkit().adapt(grpDefineARemote);
-		managedForm.getToolkit().paintBordersFor(grpDefineARemote);
-		
-		Label lblServiceIp = new Label(grpDefineARemote, SWT.NONE);
-		managedForm.getToolkit().adapt(lblServiceIp, true, true);
-		lblServiceIp.setText("Service URL");
-		
-		text = new Text(grpDefineARemote, SWT.BORDER);
-		GridData gd_text = new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1);
-		gd_text.widthHint = 173;
-		text.setLayoutData(gd_text);
-		managedForm.getToolkit().adapt(text, true, true);
-		
-		Label lblSericePort = new Label(grpDefineARemote, SWT.NONE);
-		lblSericePort.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-		managedForm.getToolkit().adapt(lblSericePort, true, true);
-		lblSericePort.setText("Save Service URL Permantly ");
-		
-		Button btnNewButton_1 = new Button(grpDefineARemote, SWT.NONE);
-		GridData gd_btnNewButton_1 = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
-		gd_btnNewButton_1.widthHint = 89;
-		btnNewButton_1.setLayoutData(gd_btnNewButton_1);
-		managedForm.getToolkit().adapt(btnNewButton_1, true, true);
-		btnNewButton_1.setText("Save");
 		new Label(managedForm.getForm().getBody(), SWT.NONE);
 		
 		Composite composite_5 = new Composite(managedForm.getForm().getBody(), SWT.NONE);
 		composite_5.setLayout(new GridLayout(1, false));
 		GridData gd_composite_5 = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
 		gd_composite_5.widthHint = 596;
-		gd_composite_5.heightHint = 123;
+		gd_composite_5.heightHint = 74;
 		composite_5.setLayoutData(gd_composite_5);
 		managedForm.getToolkit().adapt(composite_5);
 		managedForm.getToolkit().paintBordersFor(composite_5);
@@ -246,12 +231,11 @@ public class FrameworkEditorPage extends FormPage {
 		grpStartTestting.setLayout(new GridLayout(1, false));
 		GridData gd_grpStartTestting = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
 		gd_grpStartTestting.widthHint = 454;
-		gd_grpStartTestting.heightHint = 71;
+		gd_grpStartTestting.heightHint = 59;
 		grpStartTestting.setLayoutData(gd_grpStartTestting);
 		grpStartTestting.setText("Start Testting ");
 		managedForm.getToolkit().adapt(grpStartTestting);
 		managedForm.getToolkit().paintBordersFor(grpStartTestting);
-		new Label(grpStartTestting, SWT.NONE);
 		
 		Button btnNewButton = new Button(grpStartTestting, SWT.NONE);
 		GridData gd_btnNewButton = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
@@ -269,6 +253,17 @@ public class FrameworkEditorPage extends FormPage {
 		
 		try {
 			combo.setItems(this.getContainerList());
+			combo.select(0);
+			new Label(composite, SWT.NONE);
+			
+			txtContainerProviderShould = new Text(composite, SWT.READ_ONLY | SWT.MULTI);
+			txtContainerProviderShould.setText("Container provider should be avilable inorder to define a new container ");
+			txtContainerProviderShould.setEditable(false);
+			GridData gd_txtContainerProviderShould = new GridData(SWT.CENTER, SWT.CENTER, true, false, 1, 1);
+			gd_txtContainerProviderShould.widthHint = 477;
+			gd_txtContainerProviderShould.heightHint = 71;
+			txtContainerProviderShould.setLayoutData(gd_txtContainerProviderShould);
+			managedForm.getToolkit().adapt(txtContainerProviderShould, true, true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
