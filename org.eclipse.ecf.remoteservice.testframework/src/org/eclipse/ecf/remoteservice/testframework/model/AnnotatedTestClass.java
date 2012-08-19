@@ -1,11 +1,19 @@
 package org.eclipse.ecf.remoteservice.testframework.model;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.ecf.remoteservice.testframework.annotaion.processer.AnnotationProcesser;
+import org.eclipse.ecf.remoteservice.testframework.annotaions.ServiceTest;
 import org.eclipse.ecf.remoteservice.testframework.utils.Message;
 import org.eclipse.ui.console.MessageConsoleStream;
 
@@ -21,36 +29,60 @@ public class AnnotatedTestClass {
 	private Class<?> testClass;
 	private String[] libraries;
 	private MessageConsoleStream userConsole;
+	private Method before;
+	private Method after;
+	private Method end;
+	private List<TestMethod> methodsList;
+ 
 	
-	public AnnotatedTestClass(Class<?> type,String impleClazz) {
-  
-		 this.implService = impleClazz;
+	public AnnotatedTestClass(Class<?> type) {
 		 this.testClass = type;
 	}
+	
+	public void loadServiceImple(URLClassLoader jdbcJarLoader)throws Exception{
+		Class<?> loadClazz = jdbcJarLoader.loadClass(testClass.getName());
+		Annotation annotation = loadClazz.getAnnotation(ServiceTest.class);
+	    if(annotation instanceof ServiceTest){
+	    	ServiceTest  serviceTest = (ServiceTest) annotation;
+	    	Class<?> imple = serviceTest.Imple();
+	    	  if(imple!=null){
+	     	     setImplService(imple.getName());
+	    	 }
+	    }	
+	}
  
-	public void Start() throws Exception{
+	public void Start(URLClassLoader jdbcJarLoader) throws Exception{
+		
+		Class<?> loadClazz = jdbcJarLoader.loadClass(testClass.getName());
 		userConsole.println(Message.TEST_BEGIN + testClass.getSimpleName());
 		System.out.println(Message.TEST_BEGIN);
-		Method[] methods = testClass.getMethods();
+		Method[] methods = loadClazz.getMethods();
+		
 		Object testClazzInstance=null;
 	    if(methods!=null){
 	    	boolean isInit = false;
+	    	methodsList = new ArrayList<TestMethod>();
 	    	for (Method method : methods) {
-				if(AnnotationProcesser.isTestInitMethod(method)){
-					testClazzInstance=testClass.newInstance();
+				if(AnnotationProcesser.isTestInitMethod(method)&&(!isInit)){
+					testClazzInstance=loadClazz.newInstance();
 					method.invoke(testClazzInstance,null);
 					isInit = true;
-					break;
+				}else if(AnnotationProcesser.isTestBeforeMethod(method)&&(before==null)){
+					this.before =method;
+				}else if(AnnotationProcesser.isTestAfterMethod(method)&&(after==null)){
+					this.after = method;
+				}else if(AnnotationProcesser.isTestEndMethod(method)&&(after==null)){
+					this.end = method;
+				}else if(AnnotationProcesser.isTestMethod(method)){
+				  methodsList.add(new TestMethod(method));
 				}
 			}
 	    	if(isInit){
-	    		this.test(methods,testClazzInstance);
+	    		this.test(testClazzInstance);
 	    	}
-	    	
 	    }else{
 	    	userConsole.println("Coudn't find any methods in the "+testClass.getSimpleName());
 	    }
-		
 	}
 	/**
 	 * Start the testing
@@ -60,134 +92,69 @@ public class AnnotatedTestClass {
 	 * @throws IllegalAccessException 
 	 * @throws IllegalArgumentException 
 	 */
-	public void test(Method[] methods,Object clazzInstance) throws Exception {
-		
-		for (Method method : methods) {	 
-			String methodname = AnnotationProcesser.isTestMethod(method);
-			if (methodname != null) {
-				try{
-				userConsole.println(Message.TEST_SEPERATOR);
-				userConsole.println("Testing Method : "+methodname);
-				method.invoke(clazzInstance,null);//Test Methods do not take any params 
-				userConsole.println(Message.TEST_SEPERATOR);
-				}catch (SecurityException e) {
-					userConsole.println(Message.TEST_FAIL + methodname
-							+ " : duto " + e.getMessage());
-					e.printStackTrace();
-					e.printStackTrace();
-				} catch (IllegalArgumentException e) {
-					userConsole.println(Message.TEST_FAIL + methodname
-							+ " : duto " + e.getMessage());
-					e.printStackTrace();
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					userConsole.println(Message.TEST_FAIL + methodname
-							+ " : duto " + e.getMessage());
-					e.printStackTrace();
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-		 
-						userConsole.println(Message.TEST_FAIL + methodname
-								+ " : duto " + e.getMessage() + " : "
-								+ ExceptionUtils.getRootCause(e).getMessage());
-						e.printStackTrace();
-				 
+	public void test(Object clazzInstance) throws Exception {
+		for (TestMethod testMethod : methodsList) {
+			 if(!testMethod.isInvoked()){
+			 invokeMethod(clazzInstance, testMethod.getMethod());
+			 }
+		}
+		if(end!=null){end.invoke(clazzInstance, null);}
+	}
+
+	private void invokeMethod(Object clazzInstance, Method method) {
+		String methodname=null;
+		if (AnnotationProcesser.isTestMethod(method)) {
+			try{
+				String dependOn = AnnotationProcesser.dependTestMethod(method);
+				if ((dependOn!=null)&&(!dependOn.equals("?method"))){
+					Method depenMethod = findMethod(dependOn);
+					if(depenMethod!=null){
+						invokeMethod(clazzInstance, depenMethod);
+					}
 				}
+			userConsole.println(Message.TEST_SEPERATOR);
+			methodname = method.getName();
+			userConsole.println("Testing Method : "+methodname);
+			if(before!=null){before.invoke(clazzInstance,null);}
+			method.invoke(clazzInstance,null);
+			if(after!=null){after.invoke(clazzInstance,null);}
+			userConsole.println(Message.TEST_SEPERATOR);
+			}catch (SecurityException e) {
+				userConsole.println(Message.TEST_FAIL + methodname
+						+ " : duto " + e.getMessage());
+				e.printStackTrace();
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				userConsole.println(Message.TEST_FAIL + methodname
+						+ " : duto " + e.getMessage());
+				e.printStackTrace();
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				userConsole.println(Message.TEST_FAIL + methodname
+						+ " : duto " + e.getMessage());
+				e.printStackTrace();
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+ 
+					userConsole.println(Message.TEST_FAIL + methodname
+							+ " : duto " + e.getMessage() + " : "
+							+ ExceptionUtils.getRootCause(e).getMessage());
+					e.printStackTrace();
 			}
 		}
 	}
 
 	
-/*	public void test(Object proxy, MessageConsoleStream userConsole) {
-
-		userConsole.println(Message.TEST_BEGIN + testClass.getSimpleName());
-		System.out.println(Message.TEST_BEGIN);
-		Method[] methods = testClass.getMethods();
-		for (Method method : methods) {	 
-			String methodname = AnnotationProcesser.isTestMethod(method);
-			if (methodname != null) {
-				userConsole.println(Message.TEST_SEPERATOR);
-				System.out.println(Message.TEST_SEPERATOR);
-				Object[] params = AnnotationProcesser.getParams(method);
-				Map<String, Class<?>> returnvalue = AnnotationProcesser
-						.getReturnvalue(method);
-
-				try {
-					Method serviceMetjod = proxy.getClass().getMethod(
-							methodname, method.getParameterTypes());
-					Object invoke = serviceMetjod.invoke(proxy, params);
-					if (returnvalue.size() > 0) {
-						Class<?> returnType = returnvalue
-								.get(invoke.toString());
-
-						if (returnType != null) {
-
-							if (returnType.isPrimitive()) {
-
-								if (checktype(invoke, returnType)) {
-									userConsole.println(Message.TEST_PASS
-											+ methodname);
-									System.out.println(Message.TEST_PASS
-											+ methodname);
-								}
-
-							} else {
-								if (returnType.isAssignableFrom(invoke
-										.getClass())) {
-									userConsole.println(Message.TEST_PASS
-											+ methodname);
-									System.out.println(Message.TEST_PASS
-											+ methodname);
-								}
-							}
-
-						} else {
-							userConsole.println(Message.TEST_FAIL + methodname
-									+ " : duto " + "Return value miss match");
-						}
-					} else {
-						 method not expecting any return value or exception 
-						userConsole.println(Message.TEST_PASS + methodname);
-					}
-
-				} catch (SecurityException e) {
-					userConsole.println(Message.TEST_FAIL + methodname
-							+ " : duto " + e.getMessage());
-					e.printStackTrace();
-					e.printStackTrace();
-				} catch (NoSuchMethodException e) {
-					userConsole.println(Message.TEST_FAIL + methodname
-							+ " : duto " + e.getMessage());
-					e.printStackTrace();
-					e.printStackTrace();
-				} catch (IllegalArgumentException e) {
-					userConsole.println(Message.TEST_FAIL + methodname
-							+ " : duto " + e.getMessage());
-					e.printStackTrace();
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					userConsole.println(Message.TEST_FAIL + methodname
-							+ " : duto " + e.getMessage());
-					e.printStackTrace();
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-					Class<?> returnException = AnnotationProcesser
-							.getReturnException(method);
-					if (returnException.isAssignableFrom(ExceptionUtils
-							.getRootCause(e).getClass())) {
-						userConsole.println(Message.TEST_PASS + methodname);
-					} else {
-						userConsole.println(Message.TEST_FAIL + methodname
-								+ " : duto " + e.getMessage() + " : "
-								+ e.getTargetException().getMessage());
-						e.printStackTrace();
-					}
-				}
-				userConsole.println(Message.TEST_SEPERATOR);
-			}
+	public Method findMethod(String methodName){
+		for (TestMethod testMethod : methodsList) {
+			   Method temp = testMethod.getMethod();
+			  if(methodName.equals(testMethod.getMethod().getName())){
+				  testMethod.setInvoked(true);
+				  return temp;
+			  }
 		}
+	    return null;
 	}
-*/
 
 	public void setiService(String iService) {
 		this.iService = iService;

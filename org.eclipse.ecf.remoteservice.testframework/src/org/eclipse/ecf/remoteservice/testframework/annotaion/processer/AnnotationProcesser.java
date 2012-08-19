@@ -5,13 +5,16 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.eclipse.ecf.remoteservice.testframework.annotaions.Param;
-import org.eclipse.ecf.remoteservice.testframework.annotaions.Result;
-import org.eclipse.ecf.remoteservice.testframework.annotaions.ResultException;
-import org.eclipse.ecf.remoteservice.testframework.annotaions.ServiceHost;
+import org.eclipse.ecf.remoteservice.testframework.annotaions.AfterMethod;
+import org.eclipse.ecf.remoteservice.testframework.annotaions.AfterSuite;
+import org.eclipse.ecf.remoteservice.testframework.annotaions.BeforeMethod;
+import org.eclipse.ecf.remoteservice.testframework.annotaions.BeforeSuite;
 import org.eclipse.ecf.remoteservice.testframework.annotaions.ServiceTest;
 import org.eclipse.ecf.remoteservice.testframework.annotaions.Test;
+import org.eclipse.ecf.remoteservice.testframework.annotaions.TestEnd;
 import org.eclipse.ecf.remoteservice.testframework.annotaions.TestInit;
+import org.eclipse.ecf.remoteservice.testframework.annotaions.TestSuite;
+import org.eclipse.ecf.remoteservice.testframework.model.AnnotatedTestClass;
 
 public class AnnotationProcesser {
 	
@@ -26,37 +29,38 @@ public class AnnotationProcesser {
 	 * @return - if given class has annotation "ServiceTest" return true else return false
 	 * 
 	 */
-public String getTestClazzImple(Class<?> aClass){
+public boolean isTestClazz(Class<?> aClass){
 		Annotation annotation = aClass.getAnnotation(ServiceTest.class);
         if(annotation instanceof ServiceTest){
-        	ServiceTest  serviceTest = (ServiceTest) annotation;
-        	/*this.setiService(serviceTest.IService());
-        	this.setImplService(serviceTest.ImplService());
-        	this.setLibraries(serviceTest.libraries().split(","));*/
-        	Class<?> imple = serviceTest.Imple();
-        	if(imple!=null){
-        	return imple.getName();
-        	}
+           return true;
         }		
-		return  null;
+		return  false;
 	}
-  
-public String getDefineHost(Class<?> aClass){
-	Annotation annotation = aClass.getAnnotation(ServiceHost.class);
-    if(annotation instanceof ServiceHost){
-    	ServiceHost  serviceTest = (ServiceHost) annotation;
-    	return serviceTest.hostId();
+
+public boolean isTestSuit(Class<?> aClass){
+	Annotation annotation = aClass.getAnnotation(TestSuite.class);
+    if(annotation instanceof TestSuite){
+       return true;
     }		
-	return  null;
+	return  false;
 }
 
-public static String isTestMethod(Method method){
+public static boolean isTestMethod(Method method){
 	    Annotation annotation = method.getAnnotation(Test.class);
 	    if(annotation instanceof Test){
-       	  return ((Test)annotation).Methodname();
+       	  return true;
        }		
-		 return  null;
+		 return  false;
   }
+
+public static String dependTestMethod(Method method){
+    Annotation annotation = method.getAnnotation(Test.class);
+    if(annotation instanceof Test){
+   	  Test test = (Test)annotation;
+   	  return test.depend();
+   }		
+	 return  null;
+}
 
 public static boolean isTestInitMethod(Method method){
     Annotation annotation = method.getAnnotation(TestInit.class);
@@ -65,74 +69,50 @@ public static boolean isTestInitMethod(Method method){
    }		
 	 return  false;
 }
+
+public static boolean isTestBeforeMethod(Method method){
+    Annotation annotation = method.getAnnotation(BeforeMethod.class);
+    if(annotation instanceof BeforeMethod){
+   	  return true;
+   }		
+	 return  false;
+}
+
+public static boolean isTestAfterMethod(Method method){
+    Annotation annotation = method.getAnnotation(AfterMethod.class);
+    if(annotation instanceof AfterMethod){
+   	  return true;
+   }		
+	 return  false;
+}
+
+public static boolean isTestEndMethod(Method method){
+    Annotation annotation = method.getAnnotation(TestEnd.class);
+    if(annotation instanceof TestEnd){
+   	  return true;
+   }		
+	 return  false;
+}
+
+public static boolean isTestSuitBefore(Method method){
+    Annotation annotation = method.getAnnotation(BeforeSuite.class);
+    if(annotation instanceof BeforeSuite){
+   	  return true;
+   }		
+	 return  false;
+}
+
+public static boolean isTestSuitAftert(Method method){
+    Annotation annotation = method.getAnnotation(AfterSuite.class);
+    if(annotation instanceof AfterSuite){
+   	  return true;
+   }		
+	 return  false;
+}
+
   
-public static Object[] getParams(Method method){
-	  Annotation[][] parameterAnnotations = method.getParameterAnnotations();
-	  Class<?>[] parameterTypes = method.getParameterTypes();
-      Object[] paramlist =   new Object[parameterTypes.length];
-	  int i=0;
-	  for(Annotation[] annotations : parameterAnnotations){
-	    Class<?> parameterType = parameterTypes[i];
-
-	    for(Annotation annotation : annotations){
-	      if(annotation instanceof Param){
-	    	   Param param = (Param) annotation;
-	    	  addParam(paramlist, i, param, parameterType);
-	    	  i++;
-	      }
-	    }
-	  }
-	 return paramlist;
-  }
-  
-public static Map<String,Class<?>> getReturnvalue(Method method){
-	 Result annotation =method.getAnnotation(Result.class);
-	  Class<?> returnType = method.getReturnType();
-	//  Result annotation =returnType.getAnnotation(Result.class);
-	  Map<String,Class<?>> map = new HashMap<String,Class<?>>();
-	  if(annotation instanceof Result){
-	    	  map.put(((Result)annotation).valu(),returnType); 
-	   }
-	 return map;
-  }
-
-public static Class<?> getReturnException(Method method){
-	  ResultException annotation =method.getAnnotation(ResultException.class);
-	  if(annotation instanceof ResultException){
-	    	 return ((ResultException)annotation).expected();
-	   }
-	 return null;
- }
 
 
-private static void addParam(Object[] paramlist,int index, Param param, Class<?> boxed) {
-		
-		if (boxed.equals(java.lang.Boolean.class)||boxed.equals(boolean.class)) {
-			    paramlist[index] = new Boolean(param.value());
-			
-		} else if (boxed.equals(java.lang.Byte.class)||boxed.equals(byte.class)) {
-			   paramlist[index] = new Byte(param.value());
 
-		} else if (boxed.equals(java.lang.Character.class)||boxed.equals(char.class)) {
-			 paramlist[index] = new Byte(param.value());
 
-		} else if (boxed.equals(java.lang.Double.class)||boxed.equals(double.class)) {
-			 paramlist[index] = new Double(param.value());
-
-		} else if (boxed.equals(java.lang.Float.class)||boxed.equals(float.class)) {
-			 paramlist[index] = new Float(param.value());
-
-		} else if (boxed.equals(java.lang.Integer.class)||boxed.equals(int.class)) {
-			 paramlist[index] = new Integer(param.value());
-
-		} else if (boxed.equals(java.lang.Long.class)||boxed.equals(long.class)) {
-			 paramlist[index] = new Long(param.value());
-
-		} else if (boxed.equals(java.lang.Short.class)||boxed.equals(short.class)) {
-			 paramlist[index] = new Short(param.value());
-
-		} else if(boxed.equals(java.lang.String.class)){
-			paramlist[index] = new String(param.value());
-		}
-	}
 }

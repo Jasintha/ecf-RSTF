@@ -21,5 +21,4 @@ Import-Package: org.eclipse.core.resources,
 Export-Package: org.eclipse.ecf.remoteservice.testframework.annotaions,
  org.eclipse.ecf.remoteservice.testframework.handler
 Bundle-ClassPath: lib/commons-lang3-3.1.jar,
- .,
- lib/org.jasintha.ecf.service.cal_1.0.0.jar
+ .

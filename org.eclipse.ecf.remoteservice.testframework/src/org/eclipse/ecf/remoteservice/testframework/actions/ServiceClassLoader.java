@@ -7,10 +7,12 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.ecf.remoteservice.testframework.annotaion.processer.AnnotationProcesser;
+import org.eclipse.ecf.remoteservice.testframework.handler.ServiceRegisterHandler;
 import org.eclipse.ecf.remoteservice.testframework.model.AnnotatedTestClass;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -31,13 +33,17 @@ public class ServiceClassLoader {
 	private  List<AnnotatedTestClass> testClassesList;
 	private IProject[] wsprojects;
     private  List<URL> urls;  
+    private List<String>clazzlist;
+    private AnnotationProcesser processer;
 	
 	public ServiceClassLoader(List<String> classlist, String projectClasspath,
 			AnnotationProcesser processer, IClasspathEntry[] rawClasspath,IProject[] wsprojects)
 			throws MalformedURLException, ClassNotFoundException,Exception {
 		    urls = new ArrayList<URL>(); 
 		    urls.add(new File(projectClasspath).toURL());
+		    this.clazzlist =classlist;
 		    this.wsprojects =wsprojects;
+		    this.processer =processer;
 		setJdbcJarLoader(new URLClassLoader((URL[]) urls.toArray(new URL[0]), this.getClass()
 				.getClassLoader()));
 		setTestClassesList(getTestClassesList(getJdbcJarLoader(), classlist,
@@ -47,8 +53,13 @@ public class ServiceClassLoader {
 
 	}
 
-	public Class<?> getclass(String classname) throws Exception{
-		return Class.forName(classname,true,getJdbcJarLoader());	
+	public Class<?> getclass(String classname){
+		try{
+			return Class.forName(classname,true,getJdbcJarLoader());	
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return null;
 	}
  
 	private List<AnnotatedTestClass> getTestClassesList(
@@ -58,11 +69,20 @@ public class ServiceClassLoader {
 		if (classNameList != null) {
 			for (String classname : classNameList) {
 				try {
+					try{
 					Class<?> type = Class.forName(classname, true, jdbcJarLoader);
-					String imple =processer.getTestClazzImple(type);
-					if (imple!=null) {
-						classList.add(new AnnotatedTestClass(type,imple));
+					if (processer.isTestClazz(type)) {
+						classList.add(new AnnotatedTestClass(type));
+					}else if(processer.isTestSuit(type)){
+						ServiceRegisterHandler.setTestSuit(type.getName());
+					 }
+					}catch(Exception e){
+						e.printStackTrace();
 					}
+					
+					/*if (imple!=null) {
+						classList.add(new AnnotatedTestClass(type,imple));
+					}*/
 				} catch (Throwable e) {
 					 
 					 /*Exception ignore*/
@@ -81,9 +101,12 @@ public class ServiceClassLoader {
 	 */
 	private void loadJarServiceDependancies(int count) throws Exception {
 
-		for (AnnotatedTestClass annotatedTestClass : testClassesList) {
+		try {
 
-			try {
+	      	for (AnnotatedTestClass annotatedTestClass : testClassesList) {
+
+		
+				annotatedTestClass.loadServiceImple(getJdbcJarLoader());
 				String ServiceName  =annotatedTestClass.getImplService();
 				URLClassLoader jdbcJarLoader2 = getJdbcJarLoader();
 				Class<?> clazz = Class.forName(ServiceName, true,jdbcJarLoader2);
@@ -92,27 +115,37 @@ public class ServiceClassLoader {
 					annotatedTestClass.setiService(interfaces[0].getName());
 					getclass(annotatedTestClass.getiService());
 				}
+	      	}
 
 			} catch (ClassNotFoundException e) {
-				if (count == 0) {
+				if (count < 0) {
 					if (findClazz(e.getMessage())) {
-						loadJarServiceDependancies(1);
+						loadJarServiceDependancies(count++);
 					}
 				}
 				throw e;
 			} catch (NoClassDefFoundError e) {
-				if (count == 0) {
+				if (count < 3) {
 					if (findClazz(e.getCause().getMessage())) {
-						loadJarServiceDependancies(1);
+						loadJarServiceDependancies(count++);
 					}
 				}
 				throw e;
+			}catch(TypeNotPresentException e){
+				if (count < 3) {
+					String message = e.getCause().getCause().getMessage();
+				 
+					if (findClazz(message)) {
+						loadJarServiceDependancies(count++);
+					}
+				}
+			}catch(Exception e){
+				e.printStackTrace();
 			}
-		}
 	}	
 	
-	private boolean findClazz(String clazz) throws Exception{
-		
+	private boolean findClazz(String clazz)  {
+		try{
 		 for (IProject pr : wsprojects) {
 			 if(pr.isOpen()){
 				 List<String> classes = ServiceClassLoader.getClasses(pr,clazz);
@@ -126,10 +159,16 @@ public class ServiceClassLoader {
 					urls.add(nf.toURL());
 					setJdbcJarLoader(new URLClassLoader((URL[]) urls.toArray(new URL[0]), this.getClass()
 							.getClassLoader()));
+					setTestClassesList(getTestClassesList(getJdbcJarLoader(), clazzlist,
+							processer));
 					return true;
 	                 	}
 		     	 }
 		 }	
+	    	}catch(Exception e){
+			/*Exception Ignored*/
+		}
+		 
 		return false;
 	} 
 	

@@ -1,5 +1,6 @@
 package org.eclipse.ecf.remoteservice.testframework.handler;
 
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +16,7 @@ import org.eclipse.ecf.remoteservice.testframework.actions.ServiceConsumer;
 import org.eclipse.ecf.remoteservice.testframework.actions.TestOutputConsole;
 import org.eclipse.ecf.remoteservice.testframework.annotaion.processer.AnnotationProcesser;
 import org.eclipse.ecf.remoteservice.testframework.model.AnnotatedTestClass;
+import org.eclipse.ecf.remoteservice.testframework.model.AnnotatedTestSuit;
 import org.eclipse.ecf.remoteservice.testframework.ui.FrameworkEditor;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -48,6 +50,7 @@ public class ServiceRegisterHandler implements IActionDelegate {
     private String serviceContainer;
     private String ConsumerContainer;
     private String hostId;
+    private static String testSuit;
     
 	@Override
 	public void run(IAction arg0) {
@@ -85,7 +88,15 @@ public class ServiceRegisterHandler implements IActionDelegate {
 			
 			List<AnnotatedTestClass> testClassesList = classLoader
 					.getTestClassesList();
+			if(testSuit!=null){
+				Class<?> testsuit = classLoader.getJdbcJarLoader().loadClass(testSuit);
+				if(testsuit!=null){
+				new AnnotatedTestSuit().start(testsuit);
+				}
+			}
+			
 			if(testClassesList.size()>0){
+				
 			for (AnnotatedTestClass testClass : testClassesList) {
 				String serviceURL=null;
 				if("local".equals(this.getHostId())){
@@ -97,8 +108,7 @@ public class ServiceRegisterHandler implements IActionDelegate {
 				}
 
 				ServiceConsumer serviceConsumer = serviceConsumer(lock,
-						classLoader, testClass, serviceURL,
-						processer.getDefineHost(testClass.getType()));
+						classLoader, testClass, serviceURL);
 
 					RemoteProxyInvocationHandler.setServiceProxy(serviceConsumer.getRemoteService()
 									.getProxy(
@@ -107,14 +117,22 @@ public class ServiceRegisterHandler implements IActionDelegate {
 													.getclass(testClass
 															.getiService()) }));
 					testClass.setUserConsole(userConsole);
-					testClass.Start();
+					
+					URLClassLoader jdbcJarLoader = classLoader.getJdbcJarLoader();
+					testClass.Start(jdbcJarLoader);
 
 			}
 		  	   userConsole.println("\n\n Test completed Successfully !!");
 			}else{
 				userConsole.println("Test Classes NOT found ! \n\n");
 			}
-		} catch (Exception e) {
+			if(testSuit!=null){
+				Class<?> testsuit = classLoader.getJdbcJarLoader().loadClass(testSuit);
+				if(testsuit!=null){
+				new AnnotatedTestSuit().finish(testsuit);
+				}
+			}
+		}catch (Exception e) {
 			userConsole.println(e.getMessage());
 			e.printStackTrace();
 		}
@@ -158,7 +176,7 @@ public class ServiceRegisterHandler implements IActionDelegate {
 	 */
   private ServiceConsumer serviceConsumer(final Object lock,
 			ServiceClassLoader classLoader, AnnotatedTestClass testClass,
-			String serviceURL,String hostId) throws  Exception,
+			String serviceURL) throws  Exception,
 			InterruptedException {
 		 ServiceConsumer consumer = new  ServiceConsumer();
 		 consumer.setInterfaceName(classLoader.getclass(testClass.getiService()).getName());
@@ -229,6 +247,14 @@ public class ServiceRegisterHandler implements IActionDelegate {
 
 	public String getHostId() {
 		return hostId;
+	}
+
+	public static void setTestSuit(String testSuit) {
+		ServiceRegisterHandler.testSuit = testSuit;
+	}
+
+	public static String getTestSuit() {
+		return testSuit;
 	}
 	
 /*	private static List<String> getClasses(IProject project,String classname){

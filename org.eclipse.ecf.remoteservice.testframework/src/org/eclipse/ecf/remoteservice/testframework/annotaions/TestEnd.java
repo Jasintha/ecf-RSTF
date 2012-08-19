@@ -6,11 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)		
-/**
- * libraries get the external libraries which need to run the test
- */
-public @interface ServiceResources {
+@Target(ElementType.METHOD)	
+public @interface TestEnd {
 
-	public String[] libraries (); 
 }
