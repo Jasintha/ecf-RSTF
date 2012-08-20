@@ -1,20 +1,3 @@
-Steps to test this code
+Please refer the following online Document 
 
-1 build the project (result should be ecf-testframework-1.0-SNAPSHOT.jar)
-
-2 create a sample test project (java project)
-
-2 import that jar file (ecf-testframework-1.0-SNAPSHOT.jar) into your test project
-
-3 Now you able to use PrintTest annotaion in your project 
-
-ex:
-
-    @printTest
-    public void testMethod(){
-
- } 
-
-
-5 Finally compile the code as follows
-javac -cp target/ecf-testframework-1.0-SNAPSHOT.jar Test.java (you will see the annotated method name in the consol
+https://docs.google.com/document/d/1iABk9RLAR52tOim4mzeAIm12NsdeZynjzkAw4F2Fy0A/edit
