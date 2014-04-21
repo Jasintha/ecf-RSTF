@@ -19,7 +19,7 @@ public class Activator extends AbstractUIPlugin {
 	
 	/**
 	 *
-	 * The constructor 
+	 * The constructor this const
 	 */
 	public Activator() {
 	}
