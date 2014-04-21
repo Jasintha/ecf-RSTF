@@ -19,7 +19,7 @@ public class Activator extends AbstractUIPlugin {
 	
 	/**
 	 *
-	 * The constructor 
+	 * The constructor 234342343242342424
 	 */
 	public Activator() {
 	}
