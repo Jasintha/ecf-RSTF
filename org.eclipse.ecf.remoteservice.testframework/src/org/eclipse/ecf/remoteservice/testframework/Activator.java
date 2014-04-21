@@ -18,7 +18,8 @@ public class Activator extends AbstractUIPlugin {
 	public static BundleContext context;
 	
 	/**
-	 * The constructor
+	 * Test
+	 * The constructor 
 	 */
 	public Activator() {
 	}
